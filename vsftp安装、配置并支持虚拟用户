@@ -116,9 +116,7 @@ chroot_local_user=YES
 # You may override where the log file goes if you like. The default is shown
 # below.
 xferlog_file=/var/log/vsftpd.log
-设定Vsftpd的服务日志保存路径。注意，该文件默认不存在。必须要手动touch出来，并且由于这里更改了Vsftpd的服务宿主
-
-用户为手动建立的Vsftpd。必须注意给与该用户对日志的写入权限，否则服务将启动失败。
+设定Vsftpd的服务日志保存路径。注意，该文件默认不存在。必须要手动touch出来，并且由于这里更改了Vsftpd的服务宿主用户为手动建立的Vsftpd。必须注意给与该用户对日志的写入权限，否则服务将启动失败。
 #
 # If you want, you can have your log file in standard ftpd xferlog format
 xferlog_std_format=YES
