@@ -8,8 +8,8 @@ vsftpd 版本 3.0.2
 # make install
 # cp vsftpd.conf /etc
 
-// 复制 vsftpd.pam 并改名为 ftp 到 /etc/pam.d 目录
-# cp RedHat/vsftpd.pam /etc/pam.d/ftp
+// 复制 vsftpd.pam 到 /etc/pam.d 目录
+# cp RedHat/vsftpd.pam /etc/pam.d
 
 # mkdir /var/ftp/
 
