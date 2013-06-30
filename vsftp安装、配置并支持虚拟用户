@@ -8,7 +8,6 @@
 
 
 
-
 一.安装：
 1.安装Vsftpd服务相关部件：
 [root@linuxidc.com ~]# yum install vsftpd*
@@ -23,7 +22,6 @@
 
 
 
-
 二.系统帐户
 1.建立Vsftpd服务的宿主用户：
 [root@linuxidc.com ~]# useradd vsftpd -s /sbin/nologin
@@ -35,7 +33,6 @@
 他们的总体权限其实是集中寄托在一个在系统中的某一个用户身上的，所谓Vsftpd的虚拟宿主用户，就是这样一个支持着所有虚拟用户的宿主用户。
 由于他支撑了FTP的所有虚拟的用户，那么他本身的权限将会影响着这些虚拟的用户，
 因此，处于安全性的考虑，也要非分注意对该用户的权限的控制，该用户也绝对没有登陆系统的必要，这里也设定他为不能登陆系统的用户。
-
 
 
 
@@ -224,7 +221,6 @@ user_config_dir=/etc/vsftpd/vconf
 
 
 
-
 三.制作虚拟用户数据库文件
 1.先建立虚拟用户名单文件：
 [root@linuxidc.com ~]# touch /etc/vsftpd/virtusers
@@ -253,6 +249,8 @@ ftp003
 -rw-r--r-- 1 root root 12288 Sep 16 03:51 /etc/vsftpd/virtusers.db
 需要特别注意的是，以后再要添加虚拟用户的时候，只需要按照“一行用户名，一行口令”的格式将新用户名和口令添加进虚拟用户名单文件。
 但是光这样做还不够，不会生效的哦！还要再执行一遍“ db_load -T -t hash -f 虚拟用户名单文件虚拟用户数据库文件.db ”的命令使其生效才可以！
+
+
 
 四.设定PAM验证文件，并指定虚拟用户数据库文件进行读取
 1.察看原来的Vsftp的PAM验证配置文件：
@@ -285,7 +283,6 @@ account required      /lib/security/pam_userdb.so     db=/etc/vsftpd/virtusers
 #%PAM-1.0
 auth    required      /lib64/security/pam_userdb.so     db=/etc/vsftpd/virtusers
 account required      /lib64/security/pam_userdb.so     db=/etc/vsftpd/virtusers
-
 
 
 
@@ -344,7 +341,6 @@ drwxr-xr-x 2 overlord overlord 4096 Sep 16 05:00 ftp003
 
 
 
-
 六.给测试用户定制：
 1.从虚拟用户模版配置文件复制：
 [root@linuxidc.com ~]# cp /etc/vsftpd/vconf/vconf.tmp /etc/vsftpd/vconf/ftp001
@@ -373,6 +369,8 @@ chroot_local_user=YES
 [root@linuxidc.com ~]# service vsftpd start
 Starting vsftpd for vsftpd:                                [ OK ]
 
+
+
 八.测试：
 1.在虚拟用户目录中预先放入文件：
 [root@linuxidc.com ~]# touch /opt/vsftp/ftp001/test.txt
@@ -391,9 +389,7 @@ ftp> open 192.168.1.22
 Connected to 192.168.1.22.
 500 OOPS: vsftpd: both local and anonymous access disabled!
 ----------------------------------
-原因：虚拟用户再丰富，其实也是基于它们的宿主用户virtusers的，如果virtusers这个虚拟用户的宿主被限制住了，那么虚
-
-拟用户也将受到限制。
+原因：虚拟用户再丰富，其实也是基于它们的宿主用户virtusers的，如果virtusers这个虚拟用户的宿主被限制住了，那么虚拟用户也将受到限制。
 
 补充：
 1.要查看服务器自带的防火墙有无挡住FTP 21端口 导致不能访问
