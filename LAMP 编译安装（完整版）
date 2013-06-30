@@ -1,0 +1,443 @@
+系统 CentOS 5.5 32位系统 LVM 英文最小化安装 安装后大小 992M
+swap (内存的两倍)
+/boot 100M
+/ (用LVM，所有剩余空间)
+
+
+--------------------------------------------------
+groupadd www
+useradd -g www www
+passwd www
+usermod -G wheel www
+
+
+--------------------------------------------------
+卸载yum或rpm安装的amp软件
+
+在编译安装lamp之前，首先先卸载已存在的rpm包吧。
+
+rpm -e httpd
+rpm -e mysql
+rpm -e php
+
+yum -y remove httpd
+yum -y remove php
+yum -y remove mysql-server mysql
+yum -y remove php-mysql
+
+
+--------------------------------------------------
+df -hl
+du -h --max-depth=1 // 查看当前文件下的文件和文件夹大小
+du -h --max-depth=1 /usr/local
+du -h --max-depth=1 /usr/local/*
+
+
+--------------------------------------------------
+禁用SeLinux
+
+selinux可能会致使编译安装失败，我们先禁用它。
+//永久禁用，需要重启生效
+1、sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+2、setenforce 0 //临时禁用，不需要重启
+
+
+--------------------------------------------------
+yum安装必要工具
+
+1、安装编译工具gcc gcc-c++make automake autoconf kernel-devel
+2、安装PHP所需依赖，如libxml2-devel openssl-devel curl-devel libjpeg-devel libpng-devel等
+
+yum -y install gcc gcc-c++ make cmake automake autoconf kernel-devel ncurses-devel libxml2-devel openssl-devel curl-devel libjpeg-devel libpng-devel pcre-devel libtool-libs freetype-devel gd zlib-devel file bison patch mlocate flex diffutils readline-devel glibc-devel glib2-devel bzip2-devel gettext-devel libcap-devel libmcrypt-devel
+
+
+--------------------------------------------------
+下载所需源码
+
+apache:http://httpd.apache.org/
+mysql:http://mysql.com/downloads/mysql/
+php:http://php.net/downloads.php
+phpmyadmin:http://www.phpmyadmin.net/home_page/downloads.php
+
+我们这里选择的版本为：
+apr-1.5.2
+apr-util-1.4.6
+httpd-2.4.4
+mysql-5.6.12
+php-5.5.0
+
+phpMyAdmin-4.0.4
+
+
+--------------------------------------------------
+（下载和解压相关源码包）
+cd /lamp
+wget http://apache.etoak.com/apr/apr-1.5.2.tar.gz
+wget http://apache.etoak.com/apr/apr-util-1.4.6.tar.gz
+wget -c http://apache.ziply.com//httpd/httpd-2.4.4.tar.gz
+wget -c http://dev.mysql.com/get/Downloads/MySQL-5.6/mysql-5.6.12.tar.gz/from/http://mysql.he.net/
+wget -c http://us2.php.net/get/php-5.5.0.tar.gz/from/ar2.php.net/mirror
+
+wget -c http://sourceforge.net/projects/phpmyadmin/files/phpMyAdmin/4.0.3/phpMyAdmin-4.0.4-all-languages.tar.gz/download
+
+tar zxvf apr-1.4.6.tar.gz
+tar zxvf apr-util-1.5.2.tar.gz
+tar zxvf httpd-2.4.4.tar.gz
+tar zxvf mysql-5.6.12.tar.gz
+tar zxvf php-5.5.0.tar.gz
+
+tar zxvf phpMyAdmin-4.0.4-all-languages.tar.gz
+
+tar一次解压多个文件
+for i in *.tar.gz; do tar zxvf $i; done
+
+
+--------------------------------------------------
+cp -rf apr-1.4.6 httpd-2.4.4/srclib/apr
+cp -rf apr-util-1.5.2 httpd-2.4.4/srclib/apr-util
+
+
+--------------------------------------------------
+安装 apache-2.4.4
+
+查看帮助
+./configure --help
+
+（编译安装）
+cd /lamp/httpd-2.4.4
+
+./configure --prefix=/usr/local/apache \
+--enable-so \
+--with-included-apr \
+--enable-deflate=shared \
+--enable-expires=shared \
+--enable-headers=shared \
+--enable-rewrite=shared \
+--enable-static-support
+
+make
+make install
+
+/*************************************************
+编译参数解释：
+--prefix=/usr/local/apache：指定安装目录
+--with-included-apr：在编译时强制使用当前源代码中绑定的APR版本
+--enable-so：允许运行时加载DSO模块
+--enable-deflate=shared:将deflate模块编译为DSO
+--enable-expires=shared:将expires模块编译为DSO
+--enable-headers=shared:将headers模块编译为DSO
+--enable-rewrite=shared:将rewrite模块编译为DSO
+--enable-static-support:使用静态连接(默认为动态连接)编译所有二进制支持程序
+
+更详细的编译参数解释：http://lamp.linux.gov.cn/Apache/ApacheMenu/programs/configure.html
+*************************************************/
+
+cp build/rpm/httpd.init /etc/init.d/httpd
+chmod 755 /etc/init.d/httpd
+chkconfig --add httpd
+chkconfig httpd on
+
+设置软链接以适应init脚本
+ln -fs /usr/local/apache/ /etc/httpd
+ln -fs /usr/local/apache/bin/httpd /usr/sbin/httpd
+ln -fs /usr/local/apache/bin/apachectl /usr/sbin/apachectl
+ln -fs /usr/local/apache/logs /var/log/httpd
+
+
+/*************************************************
+(解决 service httpd stop 命令停止失败，有两种方法)
+1、
+vi /usr/local/apache/conf/httpd.conf
+添加一句
+PidFile  "/var/run/httpd.pid"
+
+2、
+vi /etc/init.d/httpd
+把
+pidfile=${PIDFILE-/var/run/${prog}.pid}
+改为
+pidfile=${PIDFILE-/usr/local/apache/logs/${prog}.pid}
+*************************************************/
+
+# 解决 service httpd stop 命令停止失败
+sed -i 's/pidfile=${PIDFILE-\/var\/run\/${prog}.pid}/pidfile=${PIDFILE-\/usr\/local\/apache\/logs\/${prog}.pid}/g' /etc/init.d/httpd
+
+service httpd start
+
+访问服务器ip看服务是否启动成功
+
+
+
+--------------------------------------------------
+安装 mysql-5.6.12 （文档下方有关于mysql的参考资料）
+
+以下安装中涉及的几点需要提前说明的问题：
+1. 所有下载的文件将保存在 /lamp 目录下
+2. mysql 将以mysql用户运行，而且将加入 service 开机自动运行
+3. mysql 将被安装在 /usr/local/mysql/ 目录下
+4. mysql 默认安装使用 utf8 字符集
+5. mysql 的数据和日志文件保存在 /var/mysql/ 对应目录下
+6. mysql 的配置文件保存于/var/mysql/my.cnf
+
+（添加用户和用户组）
+groupadd mysql
+useradd -g mysql mysql
+
+（编译安装）
+cd /lamp/mysql-5.6.12
+
+cmake -DCMAKE_INSTALL_PREFIX=/usr/local/mysql \
+-DMYSQL_UNIX_ADDR=/tmp/mysql.sock \
+-DDEFAULT_CHARSET=utf8 \
+-DDEFAULT_COLLATION=utf8_general_ci \
+-DWITH_EXTRA_CHARSETS:STRING=all \
+-DWITH_EXTRA_CHARSETS=all \
+-DWITH_MYISAM_STORAGE_ENGINE=1 \
+-DWITH_INNOBASE_STORAGE_ENGINE=1 \
+-DWITH_READLINE=1 \
+-DENABLED_LOCAL_INFILE=1 \
+-DMYSQL_DATADIR=/var/mysql/data
+
+make
+make install
+
+
+mkdir -p /var/mysql
+mkdir -p /var/mysql/data
+mkdir -p /var/mysql/log
+
+cd /usr/local/mysql
+cp support-files/mysql.server /etc/init.d/mysqld
+chmod 755 /etc/init.d/mysqld
+chmod 755 scripts/mysql_install_db
+
+初始化数据库
+scripts/mysql_install_db --user=mysql --basedir=/usr/local/mysql --datadir=/var/mysql/data
+
+初始化脚本在 /usr/local/mysql/my.cnf 生成了配置文件。需要更改该配置文件的所有者：
+chown -R mysql:mysql /usr/local/mysql
+chown -R mysql:mysql /var/mysql
+
+（多说两句：在启动MySQL服务时，会按照一定次序搜索my.cnf，先在/etc目录下找，找不到则会搜索"$basedir/my.cnf"，在本例中就是 /usr/local/mysql/my.cnf，这是新版MySQL的配置文件的默认位置！注意：在CentOS 6.4版操作系统的最小安装完成后，在/etc目录下会存在一个my.cnf，需要将此文件更名为其他的名字，如：/etc/my.cnf.bak，否则，该文件会干扰源码安装的MySQL的正确配置，造成无法启动。）
+
+chkconfig --add mysqld
+chkconfig --level 345 mysqld on
+
+# 可选：运行安全设置脚本，修改MySQL用户root（不是系统的root!）的密码，禁止root远程连接（防止破解密码），移除test数据库和匿名用户，强烈建议生产服务器使用：
+/usr/local/mysql/bin/mysql_secure_installation
+
+设置软链接以适应init脚本
+ln -fs /usr/local/mysql/bin/mysql /usr/sbin/mysql
+ln -fs /usr/local/mysql/bin/mysqladmin /usr/sbin/mysqladmin
+
+ln -s /usr/local/mysql/lib/libmysqlclient.so.18 /usr/lib/ （假定mysql已经安装。不加这个的话后面编译的时候可能会出错）
+
+直接运行mysqld程序来启动MySQL服务的方法很少见，mysqld_safe脚本会在启动MySQL服务器后继续监控其运行情况，并在其死机时重新启动它。
+/usr/local/mysql/bin/mysqld_safe &
+mysqladmin -u root -p shutdown
+
+service mysqld start
+service mysqld stop
+
+mysqladmin -u root password '您的密码'
+
+
+/*************************************************
+注：
+1、编译安装mysql 5.6.12时 运行 cmake报错Curses library not found，怎么解决?
+答：是因为 curses库没有安装，执行下面的安装命令即可：yum -y install ncurses-devel
+
+2、如果出现 Warning: Bison executable not found in PATH 则需要你安装 Bison ，可以源码编译安装，也可通过yum install bison命令快速安装。
+
+允许 root 用户远程登录 MySQL 数据库
+只留一个root用户
+mysql> use mysql;
+mysql> delete from user where password='';
+mysql> flush privileges;
+mysql> grant all privileges on *.* to root@'%' identified by "root";
+mysql> update user set password = password('123456') where host = '%';
+mysql> flush privileges;
+mysql> delete from user where host = 'localhost';
+mysql> quit
+*************************************************/
+
+
+--------------------------------------------------
+
+/*************************************************
+可以查看参数
+./configure --help
+
+是否用 --enable-extname 或 --with-extname 取决于扩展库。通常不需要外部库文件的扩展库使用 --enable。要确认的话，在 buildconf 之后运行：
+./configure --help | grep extname
+
+*************************************************/
+
+安装 php-5.5.0
+
+cd /lamp/php-5.5.0
+
+./configure --prefix=/usr/local/php \
+--with-apxs2=/usr/local/apache/bin/apxs \
+--with-config-file-path=/usr/local/php/etc \
+--with-config-file-scan-dir=/usr/local/php/etc/conf.d \
+--with-mysql=/usr/local/mysql \
+--with-bz2 \
+--with-curl \
+--with-freetype-dir \
+--with-gd \
+--with-gettext \
+--with-iconv-dir \
+--with-jpeg-dir \
+--with-mcrypt \
+--with-mhash \
+--with-mysql \
+--with-mysqli \
+--with-openssl \
+--with-pdo-mysql \
+--with-pear \
+--with-png-dir \
+--with-zlib \
+--enable-bcmath \
+--enable-calendar \
+--enable-exif \
+--enable-fpm \
+--with-fpm-user=www \
+--with-fpm-group=www \
+--enable-ftp \
+--enable-gd-native-ttf \
+--enable-mbstring \
+--enable-soap \
+--enable-sysvmsg \
+--enable-sysvsem \
+--enable-sysvshm \
+--enable-zip
+
+make
+make install
+
+/*************************************************
+编译参数解释：
+
+./configure --prefix=/usr/local/php :设置安装路径
+--with-apxs2=/usr/local/apache/bin/apxs :编译共享的 Apache 2.0 模块
+--with-config-file-path=/usr/local/php/etc :指定配置文件php.ini地址
+--with-config-file-scan-dir=/usr/local/php/etc/conf.d :指定额外的ini文件目录
+--with-mysql=/usr/local/mysql :启用mysql支持
+
+--with-bz2 :BZip2支持
+--with-curl :CRUL支持
+--with-freetype-dir
+--with-fpm-user=www :Set the user for php-fpm to run as. (default: nobody)
+--with-fpm-group=www :Set the group for php-fpm to run as. For a system user, this should usually be set to match the fpm username (default: nobody)
+--with-gd :GD支持
+--with-gettext :启用GNU gettext支持
+--with-iconv :iconv支持
+--with-jpeg-dir
+-–with-libxml-dir
+--with-mcrypt :编译mcrypt加密支持
+--with-mhash :mhash算法支持
+--with-mysqli
+--with-openssl :编译OpenSSL支持
+--with-pdo-mysql
+--with-pear :安装支持PEAR 默认路径[PREFIX/lib/php]
+--with-png-dir
+--with-vpx-dir :设置对libvpx安装前缀路径
+--with-xpm-dir :设置路径到libXpm安装前缀
+--with-zlib :编译zlib支持
+
+--enable-bcmath :启用BC风格精度数学函数
+--enable-calendar :启用支持日历转换
+--enable-exif :启用EXIF（图像元数据）的支持
+--enable-fastcgi :支持fastcgi方式启动php
+--enable-fpm :打上php-fpm 补丁后才有这个参数，cgi方式安装的启动程序
+--enable-ftp :FTP支持
+--enable-gd-native-ttf :启用TrueType字符串函数
+--enable-mbstring :启用支持多字节字符串
+--enable-soap :SOAP支持
+--enable-sysvmsg :启用sysvmsg支持
+--enable-sysvsem :启用System V信号支持
+--enable-sysvshm :启用系统V共享内存的支持
+--enable-xml
+--enable-zip :启用zip 读/写支持
+
+*************************************************/
+
+更多编译参数解释参考http://www.php.net/manual/zh/configure.about.php或者./configure --help查看。
+
+复制配置文件php.ini
+cd /lamp/php-5.5.0
+cp php.ini-development /usr/local/php/etc/php.ini
+
+/*************************************************
+PHP5新版本中出现了php.ini-developmen和php.ini-production
+这些文件有了新的命名:
+php.ini-production对应于php.ini-recommended
+php.ini-development对应于php.ini-dist
+在Windows下安装PHP，通常要将php.ini-dist或php.ini-recommended重命名为php.ini。
+根据说明，二者不同之处在于 php.ini-dist 适合开发程式使用（测试用），
+而 php.ini-recommended 拥有较高的安全性设定，则适合上线当产品使用。
+*************************************************/
+
+rm -rf /etc/php.ini
+ln -s /usr/local/php/etc/php.ini /etc/php.ini
+cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf
+
+/*************************************************
+vi /usr/local/php/etc/php-fpm.conf
+pid = run/php-fpm.pid // 取消前面的分号
+*************************************************/
+sed -i 's/;pid =/pid =/g' /usr/local/php/etc/php-fpm.conf
+
+设置 php-fpm开机启动
+cp /lamp/php-5.5.0/sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm
+chmod 755 /etc/init.d/php-fpm
+chkconfig --add php-fpm
+chkconfig php-fpm on
+service php-fpm start
+
+// 创建 phpinfo 文件，测试
+echo -e '<?php\n    phpinfo();' > /usr/local/apache/htdocs/phpinfo.php
+
+// 更改时区
+sed -i 's/;date.timezone =/date.timezone = Asia\/Chongqing/g' /usr/local/php/etc/php.ini
+
+/*************************************************
+在/usr/local/apache/conf/httpd.conf文件中加入php文件类型解析：
+vi /usr/local/apache/conf/httpd.conf
+
+DirectoryIndex index.html index.php
+AddType application/x-httpd-php .php
+*************************************************/
+sed -i 's/DirectoryIndex index.html/DirectoryIndex index.html index.php/g' /usr/local/apache/conf/httpd.conf
+sed -i 's/AddType application\/x-gzip .gz .tgz/AddType application\/x-gzip .gz .tgz\n    AddType application\/x-httpd-php .php/g' /usr/local/apache/conf/httpd.conf
+sed -i 's/you@example.com/mail@liuxufei.com/g' /usr/local/apache/conf/httpd.conf
+
+重启httpd:
+service httpd restart
+
+PHP 的扩展分为：核心扩展库、绑定的扩展库、外部扩展库、PECL 扩展库
+
+
+--------------------------------------------------
+安装 phpMyAdmin-4.0.4
+cd /lamp
+mv phpMyAdmin-4.0.4-all-languages /usr/local/apache/htdocs/phpmyadmin
+
+cd /usr/local/apache/htdocs
+cp config.sample.inc.php config.inc.php
+
+// 更改phpmyadmin的短密码
+sed -i 's/a8b7c6d/lingshishe/g' /usr/local/apache/htdocs/phpmyadmin/config.inc.php
+
+
+
+--------------------------------------------------
+参考资料：
+
+CentOS 源码编译安装LAMP(Apache MySQL PHP)
+http://www.centos.bz/2011/09/centos-compile-lamp-apache-mysql-php/
+
+centos下cmake安装mysql-5.6：
+http://www.crossyou.cn/centos-cmake-install-mysql-5-6.htm
+
