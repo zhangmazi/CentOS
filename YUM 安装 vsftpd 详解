@@ -2,6 +2,11 @@
 环境：CentOS 5.5 操作系统
 
 
+查看是否安装vsftpd
+# rpm -qa | grep vsftpd
+
+
+
 
 一.安装：
 1.安装Vsftpd服务相关部件：
