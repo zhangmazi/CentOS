@@ -20,4 +20,5 @@ vsftpd 版本 3.0.2
 // 添加 vsftpd 自启动
 # echo -e '/usr/local/sbin/vsftpd &' >> /etc/rc.local
 
-启动 vsftpd 就可以使用ftp用户匿名登录了
+// 启动 vsftpd 就可以使用ftp用户匿名登录了( user 填写 ftp，pass 随便写)
+# ftp localhost
