@@ -1,0 +1,12 @@
+安装
+
+# tar zvxf vsftpd-3.0.2.tar.gz
+# cd vsftpd-3.0.2
+# make
+# make install
+# cp vsftpd.conf /etc
+# cp RedHat/vsftpd.pam /etc/pam.d/ftp
+
+# mkdir /var/ftp/
+
+可以使用ftp用户匿名登录了
