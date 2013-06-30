@@ -1,0 +1,421 @@
+让Vsftp支持虚拟用户
+环境：CentOS 5.5 操作系统
+
+
+
+一.安装：
+1.安装Vsftpd服务相关部件：
+[root@linuxidc.com ~]# yum install vsftpd*
+
+2.确认安装PAM服务相关部件：
+[root@linuxidc.com ~]# yum install pam*
+开发包，其实不装也没有关系，主要的目的是确认PAM。
+
+3.安装DB4部件包：
+这里要特别安装一个db4的包，用来支持文件数据库。
+[root@linuxidc.com ~]# yum install db4*
+
+
+
+
+二.系统帐户
+1.建立Vsftpd服务的宿主用户：
+[root@linuxidc.com ~]# useradd vsftpd -s /sbin/nologin
+默认的Vsftpd的服务宿主用户是root，但是这不符合安全性的需要。www.linuxidc.com这里建立名字为vsftpd的用户，用他来作为支持Vsftpd的服务宿主用户。由于该用户仅用来支持Vsftpd服务用，因此没有许可他登陆系统的必要，并设定他为不能登陆系统的用户。
+
+2.建立Vsftpd虚拟宿主用户：
+[root@linuxidc.com nowhere]# useradd virtusers -s /sbin/nologin
+本篇主要是介绍Vsftp的虚拟用户，虚拟用户并不是系统用户，也就是说这些FTP的用户在系统中是不存在的。
+他们的总体权限其实是集中寄托在一个在系统中的某一个用户身上的，所谓Vsftpd的虚拟宿主用户，就是这样一个支持着所有虚拟用户的宿主用户。
+由于他支撑了FTP的所有虚拟的用户，那么他本身的权限将会影响着这些虚拟的用户，
+因此，处于安全性的考虑，也要非分注意对该用户的权限的控制，该用户也绝对没有登陆系统的必要，这里也设定他为不能登陆系统的用户。
+
+
+
+
+三.调整Vsftpd的配置文件：
+1.编辑配置文件前先备份
+[root@linuxidc.com ~]# cp /etc/vsftpd/vsftpd.conf /etc/vsftpd/vsftpd.conf.bak
+
+编辑主配置文件Vsftpd.conf
+[root@linuxidc.com ~]# vi /etc/vsftpd/vsftpd.conf
+这里我将原配置文件的修改完全记录，凡是修改的地方我都会保留注释原来的配置。其中加入我对每条配置项的认识，对于一些比较关键的配置项这里我做了我的观点，并且原本英语的说明我也不删除，供参考对比用。
+
+------------------------------------------------------------------------------
+# Example config file /etc/vsftpd/vsftpd.conf
+#
+# The default compiled in settings are fairly paranoid. This sample file
+# loosens things up a bit, to make the ftp daemon more usable.
+# Please see vsftpd.conf.5 for all compiled in defaults.
+#
+# READ THIS: This example file is NOT an exhaustive list of vsftpd options.
+# Please read the vsftpd.conf.5 manual page to get a full idea of vsftpd's
+# capabilities.
+#
+# Allow anonymous FTP? (Beware - allowed by default if you comment this out).
+#anonymous_enable=YES
+anonymous_enable=NO
+设定不允许匿名访问
+#
+# Uncomment this to allow local users to log in.
+local_enable=YES
+设定本地用户可以访问。注意：主要是为虚拟宿主用户，www.linuxidc.com如果该项目设定为NO那么所有虚拟用户将无法访问。
+#
+# Uncomment this to enable any form of FTP write command.
+write_enable=YES
+设定可以进行写操作。
+#
+# Default umask for local users is 077. You may wish to change this to 022,
+# if your users expect that (022 is used by most other ftpd's)
+local_umask=022
+设定上传后文件的权限掩码。
+#
+# Uncomment this to allow the anonymous FTP user to upload files. This only
+# has an effect if the above global write enable is activated. Also, you will
+# obviously need to create a directory writable by the FTP user.
+#anon_upload_enable=YES
+anon_upload_enable=NO
+禁止匿名用户上传。
+#
+# Uncomment this if you want the anonymous FTP user to be able to create
+# new directories.
+#anon_mkdir_write_enable=YES
+anon_mkdir_write_enable=NO
+禁止匿名用户建立目录。
+#
+# Activate directory messages - messages given to remote users when they
+# go into a certain directory.
+dirmessage_enable=YES
+设定开启目录标语功能。
+#
+# Activate logging of uploads/downloads.
+xferlog_enable=YES
+设定开启日志记录功能。
+#
+# Make sure PORT transfer connections originate from port 20 (ftp-data).
+connect_from_port_20=YES
+设定端口20进行数据连接。
+#
+# If you want, you can arrange for uploaded anonymous files to be owned by
+# a different user. Note! Using "root" for uploaded files is not
+# recommended!
+#chown_uploads=YES
+chown_uploads=NO
+设定禁止上传文件更改宿主。
+#chown_username=whoever
+chroot_local_user=YES
+设定登陆后.只可以访问自己的属主目录.不可访问上一层目录文件
+
+#
+# You may override where the log file goes if you like. The default is shown
+# below.
+xferlog_file=/var/log/vsftpd.log
+设定Vsftpd的服务日志保存路径。注意，该文件默认不存在。必须要手动touch出来，并且由于这里更改了Vsftpd的服务宿主
+
+用户为手动建立的Vsftpd。必须注意给与该用户对日志的写入权限，否则服务将启动失败。
+#
+# If you want, you can have your log file in standard ftpd xferlog format
+xferlog_std_format=YES
+设定日志使用标准的记录格式。
+#
+# You may change the default value for timing out an idle session.
+#idle_session_timeout=600
+设定空闲连接超时时间，这里使用默认。将具体数值留给每个具体用户具体指定，当然如果不指定的话，还是使用这里的默认值600，单位秒。
+#
+# You may change the default value for timing out a data connection.
+#data_connection_timeout=120
+设定单次最大连续传输时间，这里使用默认。www.linuxidc.com将具体数值留给每个具体用户具体指定，当然如果不指定的话，还是使用这里的默认值120，单位秒。
+#
+# It is recommended that you define on your system a unique user which the
+# ftp server can use as a totally isolated and unprivileged user.
+#nopriv_user=ftpsecure
+nopriv_user=vsftpd
+设定支撑Vsftpd服务的宿主用户为手动建立的Vsftpd用户。注意，一旦做出更改宿主用户后，必须注意一起与该服务相关的读
+
+写文件的读写赋权问题。比如日志文件就必须给与该用户写入权限等。
+#
+# Enable this and the server will recognise asynchronous ABOR requests. Not
+# recommended for security (the code is non-trivial). Not enabling it,
+# however, may confuse older FTP clients.
+async_abor_enable=YES
+设定支持异步传输功能。
+#
+# By default the server will pretend to allow ASCII mode but in fact ignore
+# the request. Turn on the below options to have the server actually do ASCII
+# mangling on files when in ASCII mode.
+# Beware that on some FTP servers, ASCII support allows a denial of service
+# attack (DoS) via the command "SIZE /big/file" in ASCII mode. vsftpd
+# predicted this attack and has always been safe, reporting the size of the
+# raw file.
+# ASCII mangling is a horrible feature of the protocol.
+ascii_upload_enable=YES
+ascii_download_enable=YES
+设定支持ASCII模式的上传和下载功能。
+#
+# You may fully customise the login banner string:
+ftpd_banner=Welcome to blah FTP service ^_^
+设定Vsftpd的登陆标语。
+#
+# You may specify a file of disallowed anonymous e-mail addresses. Apparently
+# useful for combatting certain DoS attacks.
+#deny_email_enable=YES
+# (default follows)
+#banned_email_file=/etc/vsftpd/banned_emails
+#
+# You may specify an explicit list of local users to chroot() to their home
+# directory. If chroot_local_user is YES, then this list becomes a list of
+# users to NOT chroot().
+#chroot_list_enable=YES
+chroot_list_enable=NO
+禁止用户登出自己的FTP主目录。
+# (default follows)
+#chroot_list_file=/etc/vsftpd/chroot_list
+#
+# You may activate the "-R" option to the builtin ls. This is disabled by
+# default to avoid remote users being able to cause excessive I/O on large
+# sites. However, some broken FTP clients such as "ncftp" and "mirror" assume
+# the presence of the "-R" option, so there is a strong case for enabling it.
+#ls_recurse_enable=YES
+ls_recurse_enable=NO
+禁止用户登陆FTP后使用"ls -R"的命令。该命令会对服务器性能造成巨大开销。如果该项被允许，那么挡多用户同时使用该命令时将会对该服务器造成威胁。
+# When "listen" directive is enabled, vsftpd runs in standalone mode and
+# listens on IPv4 sockets. This directive cannot be used in conjunction
+# with the listen_ipv6 directive.
+listen=YES
+设定该Vsftpd服务工作在StandAlone模式下。顺便展开说明一下，所谓StandAlone模式就是该服务拥有自己的守护进程支持，
+
+在ps -A命令下我们将可用看到vsftpd的守护进程名。如果不想工作在StandAlone模式下，则可以选择SuperDaemon模式，在该
+
+模式下vsftpd将没有自己的守护进程，而是由超级守护进程Xinetd全权代理，与此同时，Vsftp服务的许多功能将得不到实现。
+#
+# This directive enables listening on IPv6 sockets. To listen on IPv4 and IPv6
+# sockets, you must run two copies of vsftpd whith two configuration files.
+# Make sure, that one of the listen options is commented !!
+#listen_ipv6=YES
+
+pam_service_name=vsftpd
+设定PAM服务下Vsftpd的验证配置文件名。因此，PAM验证将参考/etc/pam.d/下的vsftpd文件配置。
+userlist_enable=YES
+设定userlist_file中的用户将不得使用FTP。
+tcp_wrappers=YES
+设定支持TCP Wrappers。#KC: The following entries are added for supporting virtual ftp users.
+以下这些是关于Vsftpd虚拟用户支持的重要配置项目。默认Vsftpd.conf中不包含这些设定项目，需要自己手动添加配置。
+
+guest_enable=YES
+设定启用虚拟用户功能。
+guest_username=virtusers
+指定虚拟用户的宿主用户。
+virtual_use_local_privs=YES
+设定虚拟用户的权限符合他们的宿主用户。
+user_config_dir=/etc/vsftpd/vconf
+设定虚拟用户个人Vsftp的配置文件存放路径。也就是说，这个被指定的目录里，将存放每个Vsftp虚拟用户个性的配置文件，
+一个需要注意的地方就是这些配置文件名必须和虚拟用户名相同。保存退出。
+
+3.建立Vsftpd的日志文件，并更该属主为Vsftpd的服务宿主用户：
+[root@linuxidc.com ~]# touch /var/log/vsftpd.log
+[root@linuxidc.com ~]# chown vsftpd.vsftpd /var/log/vsftpd.log
+
+4.建立虚拟用户配置文件存放路径：
+[root@linuxidc.com ~]# mkdir /etc/vsftpd/vconf/
+
+
+
+
+三.制作虚拟用户数据库文件
+1.先建立虚拟用户名单文件：
+[root@linuxidc.com ~]# touch /etc/vsftpd/virtusers
+建立了一个虚拟用户名单文件，这个文件就是来记录vsftpd虚拟用户的用户名和口令的数据文件，
+这里给它命名为virtusers。为了避免文件的混乱，我把这个名单文件就放置在/etc/vsftpd/下。
+
+2.编辑虚拟用户名单文件：
+[root@linuxidc.com ~]# vi /etc/vsftpd/virtusers
+----------------------------
+ftp001
+123456
+ftp002
+123456
+ftp003
+123456
+----------------------------
+编辑这个虚拟用户名单文件，在其中加入用户的用户名和口令信息。格式很简单：“一行用户名，一行口令”。
+
+3.生成虚拟用户数据文件：
+[root@linuxidc.com ~]# db_load -T -t hash -f /etc/vsftpd/virtusers /etc/vsftpd/virtusers.db
+这里我顺便把这个命令简单说明一下
+----------------------------------------------------------------------
+
+4.察看生成的虚拟用户数据文件
+[root@linuxidc.com ~]# ll /etc/vsftpd/virtusers.db
+-rw-r--r-- 1 root root 12288 Sep 16 03:51 /etc/vsftpd/virtusers.db
+需要特别注意的是，以后再要添加虚拟用户的时候，只需要按照“一行用户名，一行口令”的格式将新用户名和口令添加进虚拟用户名单文件。
+但是光这样做还不够，不会生效的哦！还要再执行一遍“ db_load -T -t hash -f 虚拟用户名单文件虚拟用户数据库文件.db ”的命令使其生效才可以！
+
+四.设定PAM验证文件，并指定虚拟用户数据库文件进行读取
+1.察看原来的Vsftp的PAM验证配置文件：
+[root@linuxidc.com ~]# cat /etc/pam.d/vsftpd
+----------------------------------------------------------------
+#%PAM-1.0
+session    optional     pam_keyinit.so    force revoke
+auth       required     pam_listfile.so item=user sense=deny file=/etc/vsftpd/ftpusers onerr=succeed
+auth       required     pam_shells.so
+auth       include      system-auth
+account    include      system-auth
+session    include      system-auth
+session    required     pam_loginuid.so
+----------------------------------------------------------------
+
+2.在编辑前做好备份：
+[root@linuxidc.com ~]# cp /etc/pam.d/vsftpd /etc/pam.d/vsftpd.backup
+
+3.编辑Vsftpd的PAM验证配置文件
+[root@linuxidc.com ~]# vi /etc/pam.d/vsftpd
+----------------------------------------------------------------
+#%PAM-1.0
+auth    required      /lib/security/pam_userdb.so     db=/etc/vsftpd/virtusers
+account required      /lib/security/pam_userdb.so     db=/etc/vsftpd/virtusers
+以上两条是手动添加的，上面的全部加#注释了.内容是对虚拟用户的安全和帐户权限进行验证。
+
+!!!!!!!这里有个要注意说明的:如果系统是64位系统在这里的所有lib后面要加入64!!!!!!
+!!!!!!!如下这样才可以:
+
+#%PAM-1.0
+auth    required      /lib64/security/pam_userdb.so     db=/etc/vsftpd/virtusers
+account required      /lib64/security/pam_userdb.so     db=/etc/vsftpd/virtusers
+
+
+
+
+五.虚拟用户的配置
+1.规划好虚拟用户的主路径：
+[root@linuxidc.com ~]# mkdir /opt/vsftp/
+
+2.建立测试用户的FTP用户目录：
+[root@linuxidc.com ~]# mkdir /opt/vsftp/ftp001 /opt/vsftp/ftp002 /opt/vsftp/ftp003
+
+3.建立虚拟用户配置文件模版：
+[root@linuxidc.com ~]# cp /etc/vsftpd/vsftpd.conf.backup /etc/vsftpd/vconf/vconf.tmp
+
+4.定制虚拟用户模版配置文件：
+[root@linuxidc.com ~]# vi /etc/vsftpd/vconf/vconf.tmp
+--------------------------------
+local_root=/opt/vsftp/virtuser
+virtuser 这个就是以后要指定虚拟的具体主路径。
+anonymous_enable=NO
+设定不允许匿名用户访问。
+write_enable=YES
+设定允许写操作。
+local_umask=022
+设定上传文件权限掩码。
+anon_upload_enable=NO
+设定不允许匿名用户上传。
+anon_mkdir_write_enable=NO
+设定不允许匿名用户建立目录。
+idle_session_timeout=600   (根据用户要求.可选)
+设定空闲连接超时时间。
+data_connection_timeout=120
+设定单次连续传输最大时间。
+max_clients=10   (根据用户要求.可选)
+设定并发客户端访问个数。
+max_per_ip=5     (根据用户要求.可选)
+设定单个客户端的最大线程数，这个配置主要来照顾Flashget、迅雷等多线程下载软件。
+local_max_rate=50000   (根据用户要求.可选)
+设定该用户的最大传输速率，单位b/s。
+pam_service_name=vsftpd
+chroot_local_user=YES
+--------------------------------
+这里将原vsftpd.conf配置文件经过简化后保存作为虚拟用户配置文件的模版。
+这里将并不需要指定太多的配置内容，主要的框架和限制交由Vsftpd的主配置文件vsftpd.conf来定义，即虚拟用户配置文件当中没有提到的配置项目将参考主配置文件中的设定。
+而在这里作为虚拟用户的配置文件模版只需要留一些和用户流量控制，访问方式控制的配置项目就可以了。
+这里的关键项是local_root这个配置，用来指定这个虚拟用户的FTP主路径。
+
+5.更改虚拟用户的主目录的属主为虚拟宿主用户：
+[root@linuxidc.com ~]# chown -R virtusers.virtusers /opt/vsftp/
+
+6.检查权限：
+[root@linuxidc.com ~]# ll /opt/vsftp/
+total 24
+drwxr-xr-x 2 overlord overlord 4096 Sep 16 05:14 ftp001
+drwxr-xr-x 2 overlord overlord 4096 Sep 16 05:00 ftp002
+drwxr-xr-x 2 overlord overlord 4096 Sep 16 05:00 ftp003
+
+
+
+
+六.给测试用户定制：
+1.从虚拟用户模版配置文件复制：
+[root@linuxidc.com ~]# cp /etc/vsftpd/vconf/vconf.tmp /etc/vsftpd/vconf/ftp001
+
+2.针对具体用户进行定制：
+[root@linuxidc.com ~]# vi /etc/vsftpd/vconf/ftp001
+---------------------------------
+local_root=/opt/vsftp/ftp001             (FTP用户ftp001 的登陆目录文件)
+anonymous_enable=NO
+write_enable=YES
+local_umask=022
+anon_upload_enable=NO
+anon_mkdir_write_enable=NO
+idle_session_timeout=300
+data_connection_timeout=90
+max_clients=1
+max_per_ip=1
+local_max_rate=25000
+pam_service_name=vsftpd
+chroot_local_user=YES
+---------------------------------
+
+
+
+七.启动服务：
+[root@linuxidc.com ~]# service vsftpd start
+Starting vsftpd for vsftpd:                                [ OK ]
+
+八.测试：
+1.在虚拟用户目录中预先放入文件：
+[root@linuxidc.com ~]# touch /opt/vsftp/ftp001/test.txt
+
+2.从其他机器作为客户端登陆FTP：
+可以IE或FTP客户端软直接访问ie里输入 ftp://127.0.0.1 (服务器IP)
+
+弹出对话框后.输入FTP用户名和密码
+---------------------------------------------
+
+注意:
+在/etc/vsftpd/vsftpd.conf中，local_enable的选项必须打开为Yes，使得虚拟用户的访问成为可能，否则会出现以下现象：
+----------------------------------
+[root@linuxidc.com ~]# ftp
+ftp> open 192.168.1.22
+Connected to 192.168.1.22.
+500 OOPS: vsftpd: both local and anonymous access disabled!
+----------------------------------
+原因：虚拟用户再丰富，其实也是基于它们的宿主用户virtusers的，如果virtusers这个虚拟用户的宿主被限制住了，那么虚
+
+拟用户也将受到限制。
+
+补充：
+1.要查看服务器自带的防火墙有无挡住FTP 21端口 导致不能访问
+2.查看 SELinux 禁用没有.要禁用
+3.500 OOPS:错误 有可能是你的vsftpd.con配置文件中有不能被实别的命令，还有一种可能是命令的YES 或 NO 后面有空格。
+4.要仔细查看各个用到的文件夹权限,及用户属主权限等
+
+
+1 如何新加FTP用户
+
+打开密码文件里加入(一行是用户.一是密码.依次类推)
+#vi /etc/vsftpd/virtusers
+加入用户后 保存退出
+
+#db_load -T -t hash -f /etc/vsftpd/virtusers /etc/vsftpd/virtusers.db   (然后生成新的虚拟用数据文件)
+#cp /etc/vsftpd/vconf/vconf.tmp d               (新建d用户,用虚拟用户模板vconf.tmp文件生成d虚拟用户文件)
+#vi /etc/vsftpd/vconf/d                         (打开D虚拟用户文件.在第一行最后加入该用户对应的FTP目录)
+#mkdir /opt/vsftp/WWW                          (新建WWW目录为d FTP用户登陆目录)
+#service vsftpd restart
+-------------------------------------------------------
+
+2 如何修改FTP 用户登陆密码
+
+打开密码文件里加入(第一行是用户.第二是密码.依次类推,只要改对应用户下面的密码即可)
+#vi /etc/vsftpd/virtusers   
+#db_load -T -t hash -f /etc/vsftpd/virtusers /etc/vsftpd/virtusers.db   (然后生成新的虚拟用数据文件)
+#service vsftpd restart
+
+来源：http://www.linuxidc.com/Linux/2011-01/31581.htm
