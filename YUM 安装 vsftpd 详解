@@ -4,6 +4,7 @@
 
 查看是否安装vsftpd
 # rpm -qa | grep vsftpd
+此处版本为 vsftpd-2.0.5-28.el5
 
 
 
