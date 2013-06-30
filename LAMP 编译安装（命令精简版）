@@ -1,0 +1,154 @@
+setup
+
+groupadd www
+useradd -g www www
+passwd www
+usermod -G wheel www
+
+yum -y remove httpd php mysql-server mysql php-mysql
+
+sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+setenforce 0
+
+yum -y install gcc gcc-c++ make cmake automake autoconf kernel-devel ncurses-devel libxml2-devel openssl-devel curl-devel libjpeg-devel libpng-devel pcre-devel libtool-libs freetype-devel gd zlib-devel file bison patch mlocate flex diffutils readline-devel glibc-devel glib2-devel bzip2-devel gettext-devel libcap-devel libmcrypt-devel
+
+cd /lamp
+
+for i in *.tar.gz; do tar zxvf $i; done
+或
+tar zxvf apr-1.4.6.tar.gz
+tar zxvf apr-util-1.5.2.tar.gz
+tar zxvf httpd-2.4.4.tar.gz
+tar zxvf mysql-5.6.12.tar.gz
+tar zxvf php-5.5.0.tar.gz
+tar zxvf phpMyAdmin-4.0.4-all-languages.tar.gz
+
+
+--------------------------------------------------------
+cp -rf apr-1.4.6 httpd-2.4.4/srclib/apr
+cp -rf apr-util-1.5.2 httpd-2.4.4/srclib/apr-util
+
+
+cd /lamp/httpd-2.4.4
+
+./configure --prefix=/usr/local/apache --enable-so --with-included-apr --enable-deflate=shared --enable-expires=shared --enable-headers=shared --enable-rewrite=shared --enable-static-support && make && make install
+
+
+cp build/rpm/httpd.init /etc/init.d/httpd
+chmod 755 /etc/init.d/httpd
+chkconfig --add httpd
+chkconfig httpd on
+
+ln -fs /usr/local/apache/ /etc/httpd
+ln -fs /usr/local/apache/bin/httpd /usr/sbin/httpd
+ln -fs /usr/local/apache/bin/apachectl /usr/sbin/apachectl
+ln -fs /usr/local/apache/logs /var/log/httpd
+
+sed -i 's/pidfile=${PIDFILE-\/var\/run\/${prog}.pid}/pidfile=${PIDFILE-\/usr\/local\/apache\/logs\/${prog}.pid}/g' /etc/init.d/httpd
+
+sed -i 's/User daemon/User www/g' /usr/local/apache/conf/httpd.conf
+
+sed -i 's/Group daemon/Group www/g' /usr/local/apache/conf/httpd.conf
+
+service httpd start
+
+
+--------------------------------------------------------
+groupadd mysql
+useradd -g mysql mysql
+
+
+cd /lamp/mysql-5.6.12
+
+cmake -DCMAKE_INSTALL_PREFIX=/usr/local/mysql -DMYSQL_UNIX_ADDR=/tmp/mysql.sock -DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DWITH_EXTRA_CHARSETS:STRING=all -DWITH_EXTRA_CHARSETS=all -DWITH_MYISAM_STORAGE_ENGINE=1 -DWITH_INNOBASE_STORAGE_ENGINE=1 -DWITH_READLINE=1 -DENABLED_LOCAL_INFILE=1 -DMYSQL_DATADIR=/var/mysql/data && make && make install 
+
+
+mkdir -p /var/mysql
+mkdir -p /var/mysql/data
+mkdir -p /var/mysql/log
+
+cd /usr/local/mysql
+cp support-files/mysql.server /etc/init.d/mysqld
+chmod 755 /etc/init.d/mysqld
+chmod 755 scripts/mysql_install_db
+
+scripts/mysql_install_db --user=mysql --basedir=/usr/local/mysql --datadir=/var/mysql/data
+
+chown -R mysql:mysql /usr/local/mysql
+chown -R mysql:mysql /var/mysql
+
+chkconfig --add mysqld
+chkconfig --level 345 mysqld on
+
+ln -fs /usr/local/mysql/bin/mysql /usr/sbin/mysql
+ln -fs /usr/local/mysql/bin/mysqladmin /usr/sbin/mysqladmin
+ln -s /usr/local/mysql/lib/libmysqlclient.so.18 /usr/lib/
+
+/usr/local/mysql/bin/mysqld_safe &
+
+mysqladmin -u root password '123456'
+
+mysql -uroot -p
+
+mysql> use mysql;
+mysql> delete from user where password='';
+mysql> flush privileges;
+mysql> grant all privileges on *.* to root@'%' identified by "root";
+mysql> update user set password = password('123456') where host = '%';
+mysql> flush privileges;
+mysql> delete from user where host = 'localhost';
+mysql> quit
+
+--------------------------------------------------------
+cd /lamp/php-5.5.0
+
+./configure --prefix=/usr/local/php --with-apxs2=/usr/local/apache/bin/apxs --with-config-file-path=/usr/local/php/etc --with-config-file-scan-dir=/usr/local/php/etc/conf.d --with-mysql=/usr/local/mysql --with-bz2 --with-curl --with-freetype-dir --with-gd --with-gettext --with-iconv-dir --with-jpeg-dir --with-mcrypt --with-mhash --with-mysql --with-mysqli --with-openssl --with-pdo-mysql --with-pear --with-png-dir --with-zlib --enable-bcmath --enable-calendar --enable-exif --enable-fpm --with-fpm-user=www --with-fpm-group=www --enable-ftp --enable-gd-native-ttf --enable-mbstring --enable-soap --enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-zip && make && make install
+
+cp php.ini-development /usr/local/php/etc/php.ini
+
+ln -s /usr/local/php/etc/php.ini /etc/php.ini
+cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf
+
+sed -i 's/;pid =/pid =/g' /usr/local/php/etc/php-fpm.conf
+
+cp sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm
+chmod 755 /etc/init.d/php-fpm
+chkconfig --add php-fpm
+chkconfig php-fpm on
+service php-fpm start
+
+echo -e '<?php\n    phpinfo();' > /usr/local/apache/htdocs/phpinfo.php
+
+sed -i 's/;date.timezone =/date.timezone = Asia\/Chongqing/g' /usr/local/php/etc/php.ini
+
+sed -i 's/DirectoryIndex index.html/DirectoryIndex index.html index.php/g' /usr/local/apache/conf/httpd.conf
+
+sed -i 's/AddType application\/x-gzip .gz .tgz/AddType application\/x-gzip .gz .tgz\n    AddType application\/x-httpd-php .php/g' /usr/local/apache/conf/httpd.conf
+
+sed -i 's/you@example.com/mail@liuxufei.com/g' /usr/local/apache/conf/httpd.conf
+
+service httpd restart
+
+--------------------------------------------------------
+cd /lamp
+mv phpMyAdmin-4.0.4-all-languages /usr/local/apache/htdocs/phpmyadmin
+
+cd /usr/local/apache/htdocs
+cp config.sample.inc.php config.inc.php
+
+sed -i 's/a8b7c6d/lingshishe/g' /usr/local/apache/htdocs/phpmyadmin/config.inc.php
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
