@@ -8,24 +8,24 @@
 
 Samba 应用案例一：
 
-	允许用户用户通过 Windows 客户端访问自己的宿主目录。
-	
-	1、安装 Samba，不需要对配置文件做修改，即可实现此功能
-	
-	如果安装启用了 SELinux，需要先执行
-	# setsebool -P samba_enable_home_dir on
-	
-	2、设置用户（系统用户） Samba 验证密码
-	# smbpasswd -a 用户名
-	
-	3、启动 Samba 服务
-	# service smb start
-	
-	Windows 客户端访问 Samba 服务器共享资源：
-	“开始” -> “运行”，输入 \\Samba服务器地址
-	
-	Samba 服务器端查看访问的客户端信息：
-	# smbstatus
+    允许用户用户通过 Windows 客户端访问自己的宿主目录。
+    
+    1、安装 Samba，不需要对配置文件做修改，即可实现此功能
+    
+    如果安装启用了 SELinux，需要先执行
+    # setsebool -P samba_enable_home_dir on
+    
+    2、设置用户（系统用户） Samba 验证密码
+    # smbpasswd -a 用户名
+    
+    3、启动 Samba 服务
+    # service smb start
+    
+    Windows 客户端访问 Samba 服务器共享资源：
+    “开始” -> “运行”，输入 \\Samba服务器地址
+    
+    Samba 服务器端查看访问的客户端信息：
+    # smbstatus
 
 --------------------------------------------------------------------------
 
