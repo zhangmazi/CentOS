@@ -1,0 +1,117 @@
+# yum -y install vsftpd*
+# yu -y install pam*
+# yum -y install db4*
+
+# useradd vsftpd -s /sbin/nologin
+# useradd virtusers -s /sbin/nologin
+
+# cp /etc/vsftpd/vsftpd.conf /etc/vsftpd/vsftpd.conf.bak
+# vi /etc/vsftpd/vsftpd.conf
+
+------------------------------------------------------------------------------
+anonymous_enable=NO
+local_enable=YES
+write_enable=YES
+local_umask=022
+anon_upload_enable=NO
+anon_mkdir_write_enable=NO
+dirmessage_enable=YES
+xferlog_enable=YES
+connect_from_port_20=YES
+chown_uploads=NO
+chroot_local_user=YES
+xferlog_file=/var/log/vsftpd.log
+xferlog_std_format=YES
+nopriv_user=vsftpd
+async_abor_enable=YES
+ascii_upload_enable=YES
+ascii_download_enable=YES
+ftpd_banner=Welcome to blah FTP service ^_^
+chroot_list_enable=NO
+ls_recurse_enable=NO
+listen=YES
+
+pam_service_name=vsftpd
+userlist_enable=YES
+tcp_wrappers=YES
+
+guest_enable=YES
+guest_username=virtusers
+virtual_use_local_privs=YES
+user_config_dir=/etc/vsftpd/vconf
+------------------------------------------------------------------------------
+
+# touch /var/log/vsftpd.log
+# chown vsftpd.vsftpd /var/log/vsftpd.log
+# mkdir /etc/vsftpd/vconf/
+
+# touch /etc/vsftpd/virtusers
+# vi /etc/vsftpd/virtusers
+----------------------------
+ftp001
+123456
+ftp002
+123456
+ftp003
+123456
+----------------------------
+
+# db_load -T -t hash -f /etc/vsftpd/virtusers /etc/vsftpd/virtusers.db
+# cp /etc/pam.d/vsftpd /etc/pam.d/vsftpd.bak
+
+# vi /etc/pam.d/vsftpd
+----------------------------------------------------------------
+#%PAM-1.0
+auth    required      /lib/security/pam_userdb.so     db=/etc/vsftpd/virtusers
+account required      /lib/security/pam_userdb.so     db=/etc/vsftpd/virtusers
+----------------------------------------------------------------
+!!!!!!!这里有个要注意说明的:如果系统是64位系统在这里的所有lib后面要加入64!!!!!!
+!!!!!!!如下这样才可以:
+
+#%PAM-1.0
+auth    required      /lib64/security/pam_userdb.so     db=/etc/vsftpd/virtusers
+account required      /lib64/security/pam_userdb.so     db=/etc/vsftpd/virtusers
+----------------------------------------------------------------
+
+# mkdir /opt/vsftp/
+# mkdir /opt/vsftp/ftp001 /opt/vsftp/ftp002 /opt/vsftp/ftp003
+# cp /etc/vsftpd/vsftpd.conf.bak /etc/vsftpd/vconf/vconf.tmp
+# vi /etc/vsftpd/vconf/vconf.tmp
+--------------------------------
+local_root=/opt/vsftp/virtuser
+anonymous_enable=NO
+write_enable=YES
+local_umask=022
+anon_upload_enable=NO
+anon_mkdir_write_enable=NO
+idle_session_timeout=600
+data_connection_timeout=120
+max_clients=10
+max_per_ip=5
+local_max_rate=50000
+pam_service_name=vsftpd
+chroot_local_user=YES
+--------------------------------
+
+# chown -R virtusers.virtusers /opt/vsftp/
+# ll /opt/vsftp/
+# cp /etc/vsftpd/vconf/vconf.tmp /etc/vsftpd/vconf/ftp001
+# vi /etc/vsftpd/vconf/ftp001
+---------------------------------
+local_root=/opt/vsftp/ftp001             (FTP用户ftp001 的登陆目录文件)
+anonymous_enable=NO
+write_enable=YES
+local_umask=022
+anon_upload_enable=NO
+anon_mkdir_write_enable=NO
+idle_session_timeout=300
+data_connection_timeout=90
+max_clients=1
+max_per_ip=1
+local_max_rate=25000
+pam_service_name=vsftpd
+chroot_local_user=YES
+---------------------------------
+
+# service vsftpd start
+# touch /opt/vsftp/ftp001/test.txt
