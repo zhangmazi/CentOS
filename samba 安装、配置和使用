@@ -1,0 +1,14 @@
+查看是否安装
+# rpm -qa | grep samba
+
+安装
+# yum -y install samba
+
+
+samba 服务启动项
+# service smb start
+# service smb stop
+# service smb reload
+# service smb restart
+# pkill smb;pkill nmbd    // 干掉 samba
+# pprep smb;pgrep nmbd    // 查看是否开启守护进程
