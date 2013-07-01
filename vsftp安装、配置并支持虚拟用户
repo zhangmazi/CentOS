@@ -288,7 +288,7 @@ account required      /lib64/security/pam_userdb.so     db=/etc/vsftpd/virtusers
 [root@linuxidc.com ~]# mkdir /opt/vsftp/ftp001 /opt/vsftp/ftp002 /opt/vsftp/ftp003
 
 3.建立虚拟用户配置文件模版：
-[root@linuxidc.com ~]# cp /etc/vsftpd/vsftpd.conf.backup /etc/vsftpd/vconf/vconf.tmp
+[root@linuxidc.com ~]# cp /etc/vsftpd/vsftpd.conf.bak /etc/vsftpd/vconf/vconf.tmp
 
 4.定制虚拟用户模版配置文件：
 [root@linuxidc.com ~]# vi /etc/vsftpd/vconf/vconf.tmp
@@ -395,21 +395,21 @@ Connected to 192.168.1.22.
 1 如何新加FTP用户
 
 打开密码文件里加入(一行是用户.一是密码.依次类推)
-#vi /etc/vsftpd/virtusers
+# vi /etc/vsftpd/virtusers
 加入用户后 保存退出
 
-#db_load -T -t hash -f /etc/vsftpd/virtusers /etc/vsftpd/virtusers.db   (然后生成新的虚拟用数据文件)
-#cp /etc/vsftpd/vconf/vconf.tmp d               (新建d用户,用虚拟用户模板vconf.tmp文件生成d虚拟用户文件)
-#vi /etc/vsftpd/vconf/d                         (打开D虚拟用户文件.在第一行最后加入该用户对应的FTP目录)
-#mkdir /opt/vsftp/WWW                          (新建WWW目录为d FTP用户登陆目录)
-#service vsftpd restart
+# db_load -T -t hash -f /etc/vsftpd/virtusers /etc/vsftpd/virtusers.db   (然后生成新的虚拟用数据文件)
+# cp /etc/vsftpd/vconf/vconf.tmp d               (新建d用户,用虚拟用户模板vconf.tmp文件生成d虚拟用户文件)
+# vi /etc/vsftpd/vconf/d                         (打开D虚拟用户文件.在第一行最后加入该用户对应的FTP目录)
+# mkdir /opt/vsftp/www                          (新建www目录为d FTP用户登陆目录)
+# service vsftpd restart
 -------------------------------------------------------
 
 2 如何修改FTP 用户登陆密码
 
 打开密码文件里加入(第一行是用户.第二是密码.依次类推,只要改对应用户下面的密码即可)
-#vi /etc/vsftpd/virtusers   
-#db_load -T -t hash -f /etc/vsftpd/virtusers /etc/vsftpd/virtusers.db   (然后生成新的虚拟用数据文件)
-#service vsftpd restart
+# vi /etc/vsftpd/virtusers   
+# db_load -T -t hash -f /etc/vsftpd/virtusers /etc/vsftpd/virtusers.db   (然后生成新的虚拟用数据文件)
+# service vsftpd restart
 
 来源：http://www.linuxidc.com/Linux/2011-01/31581.htm
