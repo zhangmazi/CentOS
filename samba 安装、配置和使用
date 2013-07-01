@@ -40,79 +40,81 @@ Samba 应用案例一：
 
 Samba 应用案例二：
 
-	设置 Samba 共享目录 /software，允许用户 jack 与 mary 可以通过 Windows 客户端访问，并具有读写权限。
-	
-	1、创建目录 /software，添加系统用户 jack 与 mary
-	# mkdir /software
-	# useradd -g samba jack
-	# useradd -g samba mary
-	
-	2、如果安装了 SELinux，执行命令启动用户可访问系统目录：
-	# chcon -t samba_share_t 共享目录
-	
-	3、在 Samba 配置文件 /etc/samba/smb.conf 末尾添加：
-	[software]
-	path = /software
-	valid users = jack mary
-	writable = yes
-	
-	4、设置用户 jack、mary 的 Samba 验证密码，启动 Samba 服务（服务若启动，不需重启）。
-	# smbpasswd -a jack
-	# smbpasswd -a mark
-	# service smb restart
+    设置 Samba 共享目录 /software，允许用户 jack 与 mary 可以通过 Windows 客户端访问，并具有读写权限。
+    
+    1、创建目录 /software，添加系统用户 jack 与 mary
+    # mkdir /software
+    # useradd -g samba jack
+    # useradd -g samba mary
+    
+    2、如果安装了 SELinux，执行命令启动用户可访问系统目录：
+    # chcon -t samba_share_t 共享目录
+    
+    3、在 Samba 配置文件 /etc/samba/smb.conf 末尾添加：
+    [software]
+    path = /software
+    valid users = jack mary
+    writable = yes
+    
+    4、设置用户 jack、mary 的 Samba 验证密码，启动 Samba 服务（服务若启动，不需重启）。
+    # smbpasswd -a jack
+    # smbpasswd -a mark
+    # service smb restart
 
 小技巧：Windows 在关掉所有共享文件和目录时在 DOS 命令方式下输入命令：
 
-	net use * /delete /y
+    	net use * /delete /y
 
 就可以不必注销或重启而以另一个用户的身份登录 samba 服务器。
 
 设置用户 jack 与 mary 对 /software 进行写操作：
 
-	# usermod -G samba jack
-	# usermod -G samba mary
-	# chgrp -R samba /software
-	# chmod g+w /software
-	# grep samba /etc/group
+    # usermod -G samba jack
+    # usermod -G samba mary
+    # chgrp -R samba /software
+    # chmod g+w /software
+    # grep samba /etc/group
 
 Samba 服务器检测命令
 
-	测试语法错误：
-	# testparm
+    测试语法错误：
+    # testparm
 
 --------------------------------------------------------------------------
 
 Samba 应用案例三：
 
-	建立一个公共的只读目录 /pulic，所有人可以浏览目录的内容。
-	
-	在 Samba 配置文件 /etc/samba/smb.conf 末尾添加：
-	[public]
-	comment = Read Only Public
-	path = /public
-	writable = no
+    建立一个公共的只读目录 /pulic，所有人可以浏览目录的内容。
+    
+    在 Samba 配置文件 /etc/samba/smb.conf 末尾添加：
+    [public]
+    comment = Read Only Public
+    path = /public
+    writable = no
 
 --------------------------------------------------------------------------
 
 Samba 应用案例四：
 
-	建立部门资料共享目录 /hr，部门每个人都能读写，但不能删除别人的文件。
-	
-	在 Samba 配置文件 /etc/samba/smb.conf 末尾添加：
-	[hr]
-	path = /hr
-	valid users = zhangsan lisi wangwu
-	writable = yes
-	
-	更新目录的权限
-	# chmod 1777 /hr
+    建立部门资料共享目录 /hr，部门每个人都能读写，但不能删除别人的文件。
+    
+    在 Samba 配置文件 /etc/samba/smb.conf 末尾添加：
+    [hr]
+    path = /hr
+    valid users = zhangsan lisi wangwu
+    writable = yes
+    
+    更新目录的权限
+    # chmod 1777 /hr
 
 --------------------------------------------------------------------------
 
 samba 服务启动项
-# service smb start
-# service smb stop
-# service smb reload
-# service smb restart
-# pkill smb;pkill nmbd    // 干掉 samba
-# pprep smb;pgrep nmbd    // 查看是否开启守护进程
+
+    # service smb start
+    # service smb stop
+    # service smb reload
+    # service smb restart
+    # pkill smb;pkill nmbd    // 干掉 samba
+    # pprep smb;pgrep nmbd    // 查看是否开启守护进程
+
