@@ -131,9 +131,7 @@ xferlog_std_format=YES
 # ftp server can use as a totally isolated and unprivileged user.
 #nopriv_user=ftpsecure
 nopriv_user=vsftpd
-设定支撑Vsftpd服务的宿主用户为手动建立的Vsftpd用户。注意，一旦做出更改宿主用户后，必须注意一起与该服务相关的读
-
-写文件的读写赋权问题。比如日志文件就必须给与该用户写入权限等。
+设定支撑Vsftpd服务的宿主用户为手动建立的Vsftpd用户。注意，一旦做出更改宿主用户后，必须注意一起与该服务相关的读写文件的读写赋权问题。比如日志文件就必须给与该用户写入权限等。
 #
 # Enable this and the server will recognise asynchronous ABOR requests. Not
 # recommended for security (the code is non-trivial). Not enabling it,
@@ -183,11 +181,7 @@ ls_recurse_enable=NO
 # listens on IPv4 sockets. This directive cannot be used in conjunction
 # with the listen_ipv6 directive.
 listen=YES
-设定该Vsftpd服务工作在StandAlone模式下。顺便展开说明一下，所谓StandAlone模式就是该服务拥有自己的守护进程支持，
-
-在ps -A命令下我们将可用看到vsftpd的守护进程名。如果不想工作在StandAlone模式下，则可以选择SuperDaemon模式，在该
-
-模式下vsftpd将没有自己的守护进程，而是由超级守护进程Xinetd全权代理，与此同时，Vsftp服务的许多功能将得不到实现。
+设定该Vsftpd服务工作在StandAlone模式下。顺便展开说明一下，所谓StandAlone模式就是该服务拥有自己的守护进程支持，在ps -A命令下我们将可用看到vsftpd的守护进程名。如果不想工作在StandAlone模式下，则可以选择SuperDaemon模式，在该模式下vsftpd将没有自己的守护进程，而是由超级守护进程Xinetd全权代理，与此同时，Vsftp服务的许多功能将得不到实现。
 #
 # This directive enables listening on IPv6 sockets. To listen on IPv4 and IPv6
 # sockets, you must run two copies of vsftpd whith two configuration files.
@@ -267,7 +261,7 @@ session    required     pam_loginuid.so
 ----------------------------------------------------------------
 
 2.在编辑前做好备份：
-[root@linuxidc.com ~]# cp /etc/pam.d/vsftpd /etc/pam.d/vsftpd.backup
+[root@linuxidc.com ~]# cp /etc/pam.d/vsftpd /etc/pam.d/vsftpd.bak
 
 3.编辑Vsftpd的PAM验证配置文件
 [root@linuxidc.com ~]# vi /etc/pam.d/vsftpd
