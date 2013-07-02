@@ -1,19 +1,21 @@
-centos5.5和centos6.0的U盘安装方法是有区别的。
+CentOS 5.5 和 CentOS 6.0 的U盘安装方法是有区别的。
 
-下面来详细说一下centos5.5的U盘安装方法。 
+下面来详细说一下 CentOS 5.5 的U盘安装方法。
 
-【第一步】 
+
+【第一步】格式化U盘
+利用工具或者windows自带的格式化功能，将U盘格式化成FAT32格式
+
+【第二步】
 用UltraISO打开centos5.5.iso。
 
-【第二步】 
-选择images/boot.iso  “启动“=》"写入硬盘映像" 
+【第三步】
+选择images/boot.iso  “启动“=》"写入硬盘映像" 。
 
-【第三步】 
-把centos5.5.bin.iso拷贝到U盘根目录  。 
+【第四步】
+把centos5.5.bin.iso拷贝到U盘根目录。
 
-【第四部】 
-打开isolinux 文件夹，选择vmlinuz和initrd.img  两个文件。提取到u盘根目录。 
+【第五步】
+打开isolinux 文件夹，选择vmlinuz和initrd.img  两个文件。提取到u盘根目录。
 
 最后启动电脑，选择U盘启动，安装centos5.5系统。
-
-来源：http://jimingsong.iteye.com/blog/1449078
