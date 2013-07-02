@@ -1,0 +1,24 @@
+使用dd命令创建一个swap分区
+# dd if=/dev/zero of=/home/swap bs=1024 count=1048576
+count的计算公式： count=SIZE*1024  (size以MB为单位）
+
+这样就建立一个/home/swap的分区文件，大小为1G，接着需要格式化新建的SWAP分区：
+# mkswap /home/swap
+
+再用swapon命令把这个文件分区变成swap分区
+# swapon /home/swap
+（关闭SWAP分区命令为：# swapoff /home/swap）
+
+再用free -m查看一下，可以看出swap扩大了。
+
+为了能够让swap自动挂载，要修改/etc/fstab文件
+# vi /etc/fstab
+
+在文件末尾加上
+/home/swap swap swap default 0 0
+
+这样就算重启系统，swap分区就不用手动挂载了。
+
+查看内存和 swap 信息：
+# cat /proc/meminfo
+# free -m
