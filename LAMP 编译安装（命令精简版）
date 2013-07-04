@@ -97,6 +97,7 @@ mysql> grant all privileges on *.* to root@'%' identified by "root";
 mysql> update user set password = password('123456') where host = '%';
 mysql> flush privileges;
 mysql> delete from user where host = 'localhost';
+mysql> select user,host from user;
 mysql> quit
 
 --------------------------------------------------------
