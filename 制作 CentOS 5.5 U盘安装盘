@@ -1,3 +1,45 @@
+环境：
+1、 软件环境：CentOS5.5、syslinux-4.04
+2、 硬件环境：PC、4GU盘
+
+制作linux引导盘
+
+安装操作系统需要一个引导盘，U盘亦然。
+
+具体步骤如下：
+
+1、格式化U盘
+
+    利用工具或者windows自带的格式化功能，将U盘格式化成FAT32格式
+
+2、安装syslinux
+
+    下载syslinux压缩包syslinux-4.04.tar.gz
+    （https://www.kernel.org/pub/linux/utils/boot/syslinux/）
+    
+    1）解压syslinux-4.04.tar.gz到当前目录下，文件夹改名为syslinux，如下图：
+    
+    2）进入cmd界面，执行并安装syslinux到U盘，将U盘做成可引导型U盘。
+    syslinux.exe –s –m H:
+    （H:为U盘在系统中的盘符）。
+
+    ------------------------
+    如果出现错误：
+    Writing MBR: 拒绝访问。
+    Did not successfully update the MBR; continuing...
+    Could not write the whole boot sector
+    
+    原因是在Windows7下，必须使用管理员权限来运行liveusb-creator，才能让程序具有重写U盘MBR的权限。
+    http://nc.mofcom.gov.cn/news/18165881.html
+    
+    操作权限不够?教你开启Win7管理员帐户：
+    http://soft.zol.com.cn/271/2718681.html
+    ------------------------
+
+3）拷贝CentOS-5.5-i386-bin-DVD.iso到U盘根目录，并将该镜像文件中的isolinux文件夹解压到U盘根目录，将isolinux.bin和isolinux.cfg改名为syslinux.bin和syslinux.cfg。
+
+
+/*************************************************
 CentOS 5.5 和 CentOS 6.0 的U盘安装方法是有区别的。
 
 下面来详细说一下 CentOS 5.5 的U盘安装方法。
@@ -19,3 +61,4 @@ CentOS 5.5 和 CentOS 6.0 的U盘安装方法是有区别的。
 打开isolinux 文件夹，选择vmlinuz和initrd.img  两个文件。提取到u盘根目录。
 
 最后启动电脑，选择U盘启动，安装centos5.5系统。
+*************************************************/
