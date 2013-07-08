@@ -17,9 +17,7 @@ log-bin是指定以后生成的各个binlog文件的前缀,在这里我们设为
 二、导入结果到MYSQL中进行数据恢复。
 
     # /usr/local/mysql/bin/mysqlbinlog --start-position=134 --stop-position=330 mysqlbin-log.000001 | mysql -uroot -p
- 
-或者
-
+    或者
     # /usr/local/mysql/bin/mysqlbinlog --start-position=134 --stop-position=330 mysqlbin-log.000001 >test1.txt
 
 进入MYSQL导入
