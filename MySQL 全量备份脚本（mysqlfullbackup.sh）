@@ -1,0 +1,110 @@
+#!/bin/sh
+###############################
+# 此脚本用来全量备份
+# 此文件名：mysqlfullbackup.sh
+#
+# Author: LiuXuFei
+# mail: mail@liuxufei.com
+# blog: http://liuxufei.com/
+# create: 2013/06/29
+#
+# 每个星期日早上3点做一次全量备份(加 & 为后台执行)
+# 0 3 * * * root /backup/mysql/full_backup/mysqlfullbackup.sh &
+###############################
+
+#设置用户名和密码
+mysql_user="root"
+mysql_password=""
+
+#mysql安装全路径
+mysql_dir=/usr/local/mysql/bin
+
+#备份数据库(多数据库，用逗号隔开)
+mysql_databases="quanfan"
+
+#设置备份路径，创建备份文件夹
+backup_dir=/backup/mysql
+full_backup_dir=$backup_dir/full_backup
+
+#备份的时间
+today=$(date +%Y%m%d_%H%M%S)
+
+#备份日志文件
+log_file=full_backup.log
+
+#只保留最近10个星期的备份（其他删除）
+time=$(date "-d 70 day ago" +%Y-%m-%d %H:%M:%S)
+
+#开始备份,记录备份开始时间 并压缩备份文件
+echo -e '['$(date +"%Y-%m-%d %H:%M:%S")'] - '$mysql_databases' - '"备份开始\n" >> $backup_dir/$log_file
+
+#判断目标目录是否已经存在
+if [! -d $full_backup_dir] then
+    mkdir -p $full_backup_dir
+fi
+
+echo -e '['$(date +"%Y-%m-%d %H:%M:%S")'] - '$mysql_databases' - '"备份并压缩备份文件\n" >> $backup_dir/$log_file
+
+#备份INNODB 使用下面代码 并压缩备份文件
+$mysql_dir/mysqldump -u$mysql_user -p$mysql_password --apply-slave-statements --hex-blob --routines --single-transaction --databases $mysql_databases | gzip > $full_backup_dir/$today.sql.gz
+
+#备份MyISAM 使用下面代码
+#$mysql_dir/mysqldump -u$mysql_user -p$mysql_password --apply-slave-statements --hex-blob --routines --lock-all-tables --databases $mysql_databases | gzip > $full_backup_dir/$today.sql.gz
+
+#找出70天前备份的文件，然后删除
+echo -e '['$(date +"%Y-%m-%d %H:%M:%S")'] - '$mysql_databases' - '"删除10星期前的备份\n" >> $backup_dir/$log_file
+for file in `find -not -type d -mtime +70`
+do
+    rm -rf $file
+done
+
+#基于ssh key认证，mysqldump的远程mysql备份方案
+#相关文章 http://liuxufei.com/weblog/weifenlei/868.html
+copytoremote=1
+remoteuser=
+remoteip=
+if [ $copytoremote = 1 ]; then
+    if [ -z $remoteuser ];then
+        echo -e "remote user not set,Copy to remote Failed ...\n" >> $log_file
+        exit 1
+    elif [ -z $remoteip ];then
+        echo -e "remote ip not set,Copy to remote Failed ...\n" >> $log_file
+        exit 2
+    else
+        echo -e '['$(date +"%Y-%m-%d %H:%M:%S")'] - '$mysql_databases' - '"开始使用SSH备份数据文件到远程服务器\n" >> $backup_dir/$log_file
+        scp $today".sql.gz" remoteuser@remoteip:~/
+    fi
+fi
+
+#设置ftp上传备份文件到别的服务器备份，只有 copytoftp=1 时才进行 ftp 备份
+copytoftp=1
+ftp_server=
+ftp_user=
+ftp_passwd=
+
+if [ $copytoftp = 1 ]; then
+    if [ -z $ftp_server ];then
+        echo -e "Ftp Server not set,Copy to Ftp Failed ...\n" >> $log_file
+        exit 1
+    elif [ -z $ftp_user ];then
+        echo -e "Ftp user not set, Copy to Ftp Failed ...\n" >> $log_file
+        exit 2
+    elif [ -z $ftp_passwd ]; then
+        echo -e "Ftp password not set, Copy to Ftp Failed ...\n" >> $log_file
+        exit 3
+    else
+        echo -e '['$(date +"%Y-%m-%d %H:%M:%S")'] - '$mysql_databases' - '"开始使用 FTP 备份数据文件到远程服务器\n" >> $backup_dir/$log_file
+        ftp -i -n <<end_ftp
+        open $ftp_server
+        user $ftp_user $ftp_passwd
+        lcd $full_backup_dir
+        hash
+        prompt
+        put $today.sql.gz
+        close
+        bye
+        end_ftp
+    fi
+fi
+
+echo -e '['$(date +"%Y-%m-%d %H:%M:%S")'] - '$mysql_databases' - '"备份完成\n" >> $backup_dir/$log_file
