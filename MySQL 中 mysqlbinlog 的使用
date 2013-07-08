@@ -1,0 +1,32 @@
+一.开启binary log功能
+
+在my.cnf文件中添加:
+
+    [mysqld]
+    log-bin=master-bin
+    log-bin-index=master-bin.index
+
+log-bin是指定以后生成的各个binlog文件的前缀,在这里我们设为master-bin,因此以后生成的binlog文件将会是:
+
+    master-bin.000001
+    master-bin.000002
+    ......
+
+而log-bin-index则是指定binlog index文件的名称,这里我们设为master-bin.index.
+
+二、导入结果到MYSQL中进行数据恢复。
+
+    C:\Program Files\MySQL\MySQL Server 5.0\bin>mysqlbinlog --start-position=134 --stop-position=330 mysqlbin-log.000001 | mysql -uroot -p
+ 
+或者
+
+    C:\Program Files\MySQL\MySQL Server 5.0\bin>mysqlbinlog --start-position=134 --stop-position=330 mysqlbin-log.000001 >test1.txt
+
+进入MYSQL导入
+
+    mysql> source c:\\test1.txt
+ 
+还有一种办法是根据日期来恢复
+
+    C:\Program Files\MySQL\MySQL Server 5.0\bin >mysqlbinlog --start-datetime="2009-09-14 0:20:00" --stop-datetim="2009-09-15 01:25:00" /diskb/bin-logs/xxx_db-bin.000001 | mysql -u root
+    
