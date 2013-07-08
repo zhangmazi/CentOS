@@ -16,11 +16,11 @@ log-bin是指定以后生成的各个binlog文件的前缀,在这里我们设为
 
 二、导入结果到MYSQL中进行数据恢复。
 
-    C:\Program Files\MySQL\MySQL Server 5.0\bin>mysqlbinlog --start-position=134 --stop-position=330 mysqlbin-log.000001 | mysql -uroot -p
+    # /usr/local/mysql/bin/mysqlbinlog --start-position=134 --stop-position=330 mysqlbin-log.000001 | mysql -uroot -p
  
 或者
 
-    C:\Program Files\MySQL\MySQL Server 5.0\bin>mysqlbinlog --start-position=134 --stop-position=330 mysqlbin-log.000001 >test1.txt
+    # /usr/local/mysql/bin/mysqlbinlog --start-position=134 --stop-position=330 mysqlbin-log.000001 >test1.txt
 
 进入MYSQL导入
 
@@ -28,5 +28,5 @@ log-bin是指定以后生成的各个binlog文件的前缀,在这里我们设为
  
 还有一种办法是根据日期来恢复
 
-    C:\Program Files\MySQL\MySQL Server 5.0\bin >mysqlbinlog --start-datetime="2009-09-14 0:20:00" --stop-datetim="2009-09-15 01:25:00" /diskb/bin-logs/xxx_db-bin.000001 | mysql -u root
+    # /usr/local/mysql/bin/mysqlbinlog --start-datetime="2009-09-14 0:20:00" --stop-datetim="2009-09-15 01:25:00" /diskb/bin-logs/xxx_db-bin.000001 | mysql -u root
     
