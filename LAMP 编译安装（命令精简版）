@@ -1,37 +1,41 @@
-setup
+#!/bin/bash
+/sbin/iptables -P INPUT ACCEPT
+/sbin/iptables -F
+/sbin/iptables -X
+/sbin/iptables -Z
+service iptables save
+chkconfig iptables off
 
-groupadd www
-useradd -g www www
-passwd www
-usermod -G wheel www
-
-yum -y remove httpd php mysql-server mysql php-mysql
+/sbin/ip6tables -P INPUT ACCEPT
+/sbin/ip6tables -F
+/sbin/ip6tables -X
+/sbin/ip6tables -Z
+service ip6tables save
+chkconfig ip6tables off
 
 sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
 setenforce 0
 
+groupadd www
+useradd -g www www
+echo 13535654710 | passwd --stdin www
+usermod -G wheel www
+
+yum -y remove httpd php mysql-server mysql php-mysql
+
 yum -y install gcc gcc-c++ make cmake automake autoconf kernel-devel ncurses-devel libxml2-devel openssl-devel curl-devel libjpeg-devel libpng-devel pcre-devel libtool-libs freetype-devel gd zlib-devel file bison patch mlocate flex diffutils readline-devel glibc-devel glib2-devel bzip2-devel gettext-devel libcap-devel libmcrypt-devel
 
 cd /lamp
-
 for i in *.tar.gz; do tar zxvf $i; done
-或
-tar zxvf apr-1.4.6.tar.gz
-tar zxvf apr-util-1.5.2.tar.gz
-tar zxvf httpd-2.4.4.tar.gz
-tar zxvf mysql-5.6.12.tar.gz
-tar zxvf php-5.5.0.tar.gz
-tar zxvf phpMyAdmin-4.0.4-all-languages.tar.gz
 
-
---------------------------------------------------------
+#--------------------------------------------------------
 cp -rf apr-1.4.6 httpd-2.4.4/srclib/apr
 cp -rf apr-util-1.5.2 httpd-2.4.4/srclib/apr-util
 
 
 cd /lamp/httpd-2.4.4
 
-./configure --prefix=/usr/local/apache --enable-so --with-included-apr --enable-deflate=shared --enable-expires=shared --enable-headers=shared --enable-rewrite=shared --enable-static-support && make && make install
+./configure --prefix=/usr/local/apache --enable-so --with-included-apr --enable-deflate=shared --enable-expires=shared --enable-headers=shared --enable-rewrite=shared --enable-static-support && make && make install 
 
 
 cp build/rpm/httpd.init /etc/init.d/httpd
@@ -47,13 +51,12 @@ ln -fs /usr/local/apache/logs /var/log/httpd
 sed -i 's/pidfile=${PIDFILE-\/var\/run\/${prog}.pid}/pidfile=${PIDFILE-\/usr\/local\/apache\/logs\/${prog}.pid}/g' /etc/init.d/httpd
 
 sed -i 's/User daemon/User www/g' /usr/local/apache/conf/httpd.conf
-
 sed -i 's/Group daemon/Group www/g' /usr/local/apache/conf/httpd.conf
 
 service httpd start
 
 
---------------------------------------------------------
+#--------------------------------------------------------
 groupadd mysql
 useradd -g mysql mysql
 
@@ -88,19 +91,7 @@ ln -s /usr/local/mysql/lib/libmysqlclient.so.18 /usr/lib/
 
 mysqladmin -u root password '123456'
 
-mysql -uroot -p
-
-mysql> use mysql;
-mysql> delete from user where password='';
-mysql> flush privileges;
-mysql> grant all privileges on *.* to root@'%' identified by "root";
-mysql> update user set password = password('123456') where host = '%';
-mysql> flush privileges;
-mysql> delete from user where host = 'localhost';
-mysql> select host,user from user;
-mysql> quit
-
---------------------------------------------------------
+#--------------------------------------------------------
 cd /lamp/php-5.5.0
 
 ./configure --prefix=/usr/local/php --with-apxs2=/usr/local/apache/bin/apxs --with-config-file-path=/usr/local/php/etc --with-config-file-scan-dir=/usr/local/php/etc/conf.d --with-mysql=/usr/local/mysql --with-bz2 --with-curl --with-freetype-dir --with-gd --with-gettext --with-iconv-dir --with-jpeg-dir --with-mcrypt --with-mhash --with-mysql --with-mysqli --with-openssl --with-pdo-mysql --with-pear --with-png-dir --with-zlib --enable-bcmath --enable-calendar --enable-exif --enable-fpm --with-fpm-user=www --with-fpm-group=www --enable-ftp --enable-gd-native-ttf --enable-mbstring --enable-soap --enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-zip && make && make install
@@ -129,27 +120,3 @@ sed -i 's/AddType application\/x-gzip .gz .tgz/AddType application\/x-gzip .gz .
 sed -i 's/you@example.com/mail@liuxufei.com/g' /usr/local/apache/conf/httpd.conf
 
 service httpd restart
-
---------------------------------------------------------
-cd /lamp
-mv phpMyAdmin-4.0.4-all-languages /usr/local/apache/htdocs/phpmyadmin
-
-cd /usr/local/apache/htdocs
-cp config.sample.inc.php config.inc.php
-
-sed -i 's/a8b7c6d/lingshishe/g' /usr/local/apache/htdocs/phpmyadmin/config.inc.php
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
