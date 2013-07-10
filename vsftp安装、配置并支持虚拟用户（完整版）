@@ -13,7 +13,7 @@
 [root@linuxidc.com ~]# yum -y install vsftpd*
 
 2.确认安装PAM服务相关部件：
-[root@linuxidc.com ~]# yu -y install pam*
+[root@linuxidc.com ~]# yum -y install pam*
 开发包，其实不装也没有关系，主要的目的是确认PAM。
 
 3.安装DB4部件包：
