@@ -1,6 +1,7 @@
 让Vsftp支持虚拟用户
 环境：CentOS 5.5 操作系统
 
+（请确定iptable、ip6table、selinux关闭，否则可能无法连接ftp）
 
 查看是否安装vsftpd
 # rpm -qa | grep vsftpd
